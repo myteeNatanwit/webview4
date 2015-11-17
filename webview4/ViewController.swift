@@ -14,18 +14,25 @@ class ViewController: UIViewController, UIWebViewDelegate {
 
     @IBOutlet weak var webview: UIWebView!
 
+    @IBOutlet weak var ios_label: UILabel!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         webview.delegate = self; // this line is to link with the UIWebViewDelegate protocol for bridging purpose.  - line 1
         webview.scrollView.bounces = false; // block your webview from bouncing so it works as an app. - line 2
-        let localfilePath = NSBundle.mainBundle().URLForResource("index1.html", withExtension: "", subdirectory: "www"); // load file index.html in www - line 3
+        let localfilePath = NSBundle.mainBundle().URLForResource("index3.html", withExtension: "", subdirectory: "www"); // load file index.html in www - line 3
         let request = NSURLRequest(URL: localfilePath!); // get the request to the file - line 4
         //let request = NSURLRequest(URL: NSURL(string:"http://www.google.com")!);
         webview.loadRequest(request); // load it on the webview - line 5
         
     }
 
+    @IBAction func btn1_onclick(sender: UIButton) {
+        
+        ios_label.text = call_js("js_show_data", param: "this is text from IOS");
+        
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -44,7 +51,7 @@ class ViewController: UIViewController, UIWebViewDelegate {
         shouldStartLoadWithRequest request: NSURLRequest,
         navigationType nType: UIWebViewNavigationType) -> Bool {
             
-//the request.URL?.scheme is the first part of the document.location before the first ':'. It is originally http, or https, or file.  in JS can be anything predefined ie aaa bbb, in this case we use 'bridge:'
+//the request.URL?.scheme is the first part of the document.location before the first ':'. It is originally http, or https, or file.  in Js can be anything predefined ie aaa bbb, in this case we use 'bridge:'
             print("scheme is : " + request.URL!.scheme);
             
             if (request.URL?.scheme == bridge_theme)
@@ -53,6 +60,8 @@ class ViewController: UIViewController, UIWebViewDelegate {
                 switch myrecord.function {
                     case "ios_alert":alert("Bridging" , message: myrecord.param);
                     case "ios_popup": pop_new_page(myrecord.param);
+                    case "reset": do_clear_label();
+                    case "exchange" : do_exchange(myrecord.param);
                     default : print("dont know function name: \(myrecord.function)")
                 }
 
@@ -61,6 +70,16 @@ class ViewController: UIViewController, UIWebViewDelegate {
             return true;
 
     }
+    
+    func do_exchange(txt: String) {
+        ios_label.text = "got this from JS: " + txt;
+        _ = call_js("js_show_data", param: "back to JS: Hi there I got your package");
+    }
+    
+    func do_clear_label() {
+        ios_label.text = "have been reset to this text";
+    }
+    
 // popup a screen on top of main screen
     func pop_new_page(txt: String) {
         
@@ -103,6 +122,17 @@ class ViewController: UIViewController, UIWebViewDelegate {
             presentViewController(viewController, animated: true, completion: nil);
         }
         
-    };
+    }
+    
+    // run javascript on the page with result = call_js("js_fn", param:"rarameter");
+    func call_js(function_name: String, param: String) -> String{
+        var result = "";
+        var full_path = function_name + "('" + param + "')";
+        print("Run javascript: \(full_path)");
+        
+        result = webview.stringByEvaluatingJavaScriptFromString(full_path)!;
+        return result;
+    }
+
 
 }
